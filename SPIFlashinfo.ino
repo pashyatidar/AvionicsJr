@@ -12,8 +12,9 @@ const size_t BUF_SIZE = 256;  // 256 bytes buffer
 
 // Array of test sizes in bytes (16 bytes to 8 KB)
 const uint32_t TEST_SIZES[] = {
-  16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192
+  16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288
 };
+
 const uint8_t NUM_TESTS = sizeof(TEST_SIZES) / sizeof(TEST_SIZES[0]);
 
 // Buffer for read/write (4-byte aligned)
