@@ -1,23 +1,23 @@
-#include <max6675.h> // Adafruit MAX6675 library
+#include <Adafruit_MCP9600.h>
+#include <Wire.h>
 #include <HX711.h>
 #include <HardwareSerial.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
 
-// Pin mappings for Adafruit Feather ESP32-S3
-MAX6675 thermocouple(39, 42, 40); 
+Adafruit_MCP9600 thermocouple;
 HX711 load_cell;
 HardwareSerial LoRaSerial(1);
 
-const int pressure_pin = 5;  
-const int mosfet_pin = 6;    
+const int pressure_pin = 34;
+const int mosfet_pin = 6;
 const int d4184_pwm1_pin = 8;
-const int d4184_pwm2_pin = 9; 
-const int lora_rx = 43;       
-const int lora_tx = 44;       
+const int d4184_pwm2_pin = 9;
+const int lora_rx = 16;
+const int lora_tx = 17;
 const int load_cell_dout = 2;
-const int load_cell_sck = 3; 
+const int load_cell_sck = 3;
 
 typedef enum {
   OFF,
@@ -38,7 +38,7 @@ SemaphoreHandle_t sensorMutex;
 
 float read_thermocouple() {
     if (xSemaphoreTake(sensorMutex, portMAX_DELAY)) {
-        float temp = thermocouple.readCelsius();
+        float temp = thermocouple.readThermocoupleTemperature();
         xSemaphoreGive(sensorMutex);
         return temp;
     }
@@ -155,6 +155,15 @@ void ignition_task(void *pvParameters) {
 }
 
 void setup() {
+    Wire.begin();
+    if (!thermocouple.begin()) {
+        Serial.println("Could not initialize MCP9600!");
+        while (1);
+    }
+    thermocouple.setADCresolution(MCP9600_ADC_14BIT);
+    thermocouple.setThermocoupleType(MCP9600_TYPE_K);
+    thermocouple.setFilterCoefficient(3);
+
     LoRaSerial.begin(115200, SERIAL_8N1, lora_rx, lora_tx);
     load_cell.begin(load_cell_dout, load_cell_sck);
     load_cell.set_scale(2280.f);
