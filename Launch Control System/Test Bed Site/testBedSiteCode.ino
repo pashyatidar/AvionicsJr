@@ -1,25 +1,25 @@
 #include <Adafruit_MCP9600.h>
 #include <Wire.h>
-#include <HX711.h>
 #include <HardwareSerial.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
 
 Adafruit_MCP9600 thermocouple;
-HX711 load_cell;
 HardwareSerial LoRaSerial(1);
 SemaphoreHandle_t sensorMutex;
 SemaphoreHandle_t loraMutex;
 
-const int pressure_pin = 34;
+const int pressure_pin = 14;
 const int mosfet_pin = 6;
-const int d4184_pwm1_pin = 8;
-const int d4184_pwm2_pin = 9;
-const int lora_rx = 16;
-const int lora_tx = 17;
-const int load_cell_dout = 2;
-const int load_cell_sck = 3;
+const int d4184_pwm1_pin = 12;
+const int d4184_pwm2_pin = 13;
+const int lora_rx = 43;
+const int lora_tx = 44;
+const int load_cell_pin = 41;
+
+const float load_cell_scale = 10000; 
+const float load_cell_offset = 0.0; 
 
 typedef enum {
   SAFE,
@@ -47,7 +47,9 @@ float read_thermocouple() {
 
 float read_load_cell() {
     if (xSemaphoreTake(sensorMutex, portMAX_DELAY)) {
-        float load = load_cell.get_units(10);
+        int adc_value = analogRead(load_cell_pin); 
+        float voltage = (adc_value * 5.0) / 4095.0;
+        float load = (voltage * load_cell_scale) + load_cell_offset;
         xSemaphoreGive(sensorMutex);
         return load;
     }
@@ -211,14 +213,12 @@ void setup() {
         Serial.println("Could not initialize MCP9600! Check wiring or I2C address.");
         while (1);
     }
-    thermocouple.setADCresolution(MCP9600_ADCRESOLUTION_14); // Fixed: Use MCP9600_ADCRESOLUTION_14
+    thermocouple.setADCresolution(MCP9600_ADCRESOLUTION_14); 
     thermocouple.setThermocoupleType(MCP9600_TYPE_K);
     thermocouple.setFilterCoefficient(3);
 
     LoRaSerial.begin(115200, SERIAL_8N1, lora_rx, lora_tx);
-    load_cell.begin(load_cell_dout, load_cell_sck);
-    load_cell.set_scale(2280.f);
-    load_cell.tare();
+    pinMode(load_cell_pin, INPUT); 
     pinMode(mosfet_pin, OUTPUT);
     pinMode(d4184_pwm1_pin, OUTPUT);
     pinMode(d4184_pwm2_pin, OUTPUT);
