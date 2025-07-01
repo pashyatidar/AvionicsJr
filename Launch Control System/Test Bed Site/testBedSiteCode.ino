@@ -48,7 +48,7 @@ float read_thermocouple() {
 float read_load_cell() {
     if (xSemaphoreTake(sensorMutex, portMAX_DELAY)) {
         int adc_value = analogRead(load_cell_pin); 
-        float voltage = (adc_value * 5.0) / 4095.0;
+        float voltage = (adc_value * 3.3) / 4095.0;
         float load = (voltage * load_cell_scale) + load_cell_offset;
         xSemaphoreGive(sensorMutex);
         return load;
