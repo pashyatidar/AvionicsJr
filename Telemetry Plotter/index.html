@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telemetry Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="lib/Chart.min.js"></script>
+</head>
+<body>
+    <div class="dashboard">
+        <h1>Telemetry Dashboard</h1>
+        <button id="connect-button">Connect to Microcontroller</button>
+        <div class="status">
+            <p>Connection Status: <span id="connection-status">Disconnected</span></p>
+        </div>
+        <div class="telemetry-grid">
+            <div class="telemetry-card">
+                <h2>Temperature</h2>
+                <p id="temperature">-- °C</p>
+                <canvas id="temperature-chart" height="100"></canvas>
+            </div>
+            <div class="telemetry-card">
+                <h2>Pressure</h2>
+                <p id="pressure">-- hPa</p>
+                <canvas id="pressure-chart" height="100"></canvas>
+            </div>
+            <div class="telemetry-card">
+                <h2>Altitude</h2>
+                <p id="altitude">-- m</p>
+                <canvas id="altitude-chart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
