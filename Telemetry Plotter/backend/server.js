@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require('express');   //web server framework
 const cors = require('cors');
 const multer = require('multer');
 const fs = require('fs');
