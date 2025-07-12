@@ -100,11 +100,19 @@ function PlotGraph({ data, parameter, unit, mode }) {
   };
 
   console.log(`Rendering ${parameter} graph with data:`, chartData.datasets[0].data);
-  return (
-    <div style={{ width: '1000px', height: '400px', margin: '20px auto' }}>
-      <Line data={chartData} options={options} />
+  const latestPoint = [...chartData.datasets[0].data].reverse().find(point => point.y !== null);
+const latestValue = latestPoint ? latestPoint.y.toFixed(2) : 'N/A';
+const latestTime = latestPoint ? latestPoint.x.toFixed(3) : 'N/A';
+
+return (
+  <div style={{ width: '1000px', height: '420px', margin: '20px auto', color: 'white', textAlign: 'center' }}>
+    <div style={{ marginBottom: '10px', fontWeight: 'bold', fontSize: '16px' }}>
+      Latest {parameter}: {latestValue} {unit} at {latestTime} s
     </div>
-  );
+    <Line data={chartData} options={options} />
+  </div>
+);
+
 }
 
 export default PlotGraph;
