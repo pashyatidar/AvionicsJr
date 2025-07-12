@@ -10,7 +10,7 @@ function TestDataPlotter() {
     const newData = {
       time: new Date().toISOString(),
       pressure: Math.random() * 1000,
-      thrust: Math.random() * 100,
+      thrust: Math.random() * 500,
       temperature: Math.random() * 50
     };
     console.log('Random data:', newData);
