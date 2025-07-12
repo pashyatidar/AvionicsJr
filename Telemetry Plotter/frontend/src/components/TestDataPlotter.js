@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import PlotGraph from './PlotGraph';
 
 function TestDataPlotter() {
@@ -17,25 +16,6 @@ function TestDataPlotter() {
     setData(prev => [...prev, newData]);
   };
 
-  const handleFileUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) {
-      console.error('No file selected');
-      return;
-    }
-    const formData = new FormData();
-    formData.append('file', file);
-    try {
-      const res = await axios.post('https://laughing-space-invention-jj9qr495976gc549x-5000.app.github.dev/upload-csv', formData);
-      console.log('Upload response:', res.data);
-      const fileData = await axios.get(`https://laughing-space-invention-jj9qr495976gc549x-5000.app.github.dev/read-csv/${encodeURIComponent(res.data.filePath)}`);
-      console.log('Uploaded CSV data:', fileData.data);
-      setData(fileData.data);
-    } catch (err) {
-      console.error('Upload/CSV error:', err.response?.data || err.message);
-    }
-  };
-
   useEffect(() => {
     if (subMode === 'random') {
       const interval = setInterval(generateRandomData, 5);
@@ -51,8 +31,7 @@ function TestDataPlotter() {
       <h2>Test Data</h2>
       {!subMode && (
         <div>
-          <button onClick={() => setSubMode('random')}>Random Data</button>
-          <input type="file" accept=".csv" onChange={handleFileUpload} />
+          <button onClick={() => setSubMode('random')}>Start Random Data</button>
         </div>
       )}
       {subMode && parameters.map(param => {
