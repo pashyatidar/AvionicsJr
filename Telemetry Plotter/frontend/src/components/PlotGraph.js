@@ -28,6 +28,7 @@ function PlotGraph({ data, parameter, unit, mode }) {
   }
 
   const startTime = new Date(data[0].time).getTime();
+
   const annotations = mode === 'test' && data.length > 0 ? data.reduce((acc, d, index) => {
     if (index % 50 === 0 && index !== 0) {
       const colors = ['#FF0000', '#00FF00', '#0000FF', '#FF00FF', '#00FFFF', '#FFFF00'];
@@ -74,7 +75,9 @@ function PlotGraph({ data, parameter, unit, mode }) {
           text: 'Time (seconds)'
         },
         min: 0,
-        max: mode === 'test' && data.length > 0 ? ((new Date(data[data.length - 1].time).getTime() - startTime) / 1000) + 1 : undefined
+        max: mode === 'test' && data.length > 0
+          ? ((new Date(data[data.length - 1].time).getTime() - startTime) / 1000) + 1
+          : undefined
       },
       y: {
         title: {
@@ -99,20 +102,48 @@ function PlotGraph({ data, parameter, unit, mode }) {
     }
   };
 
-  console.log(`Rendering ${parameter} graph with data:`, chartData.datasets[0].data);
-  const latestPoint = [...chartData.datasets[0].data].reverse().find(point => point.y !== null);
-  const latestValue = latestPoint ? latestPoint.y.toFixed(2) : 'N/A';
-  const latestTime = latestPoint ? latestPoint.x.toFixed(3) : 'N/A';
 
-return (
-  <div style={{ width: '1000px', height: '420px', margin: '20px auto', color: 'white', textAlign: 'center' }}>
-    <div style={{ marginBottom: '10px', fontWeight: 'bold', fontSize: '16px' }}>
-      Latest {parameter}: {latestValue} {unit} at {latestTime} s
+  let status = null;
+  let statusColor = null;
+  if (parameter.toLowerCase() === 'thrust') {
+    const validData = data.filter(d => d.thrust != null && !isNaN(d.thrust));
+    const latest = validData[validData.length - 1];
+    const thrust = latest ? parseFloat(latest.thrust) : 0;
+    if (thrust > 250) {
+      status = 'LAUNCH';
+      statusColor = 'red';
+    } else if (thrust > 100) {
+      status = 'ARM';
+      statusColor = 'orange';
+    } else {
+      status = 'SAFE';
+      statusColor = 'green';
+    }
+  }
+
+  return (
+    <div style={{ width: '1000px', height: '440px', margin: '20px auto', color: 'white', textAlign: 'center' }}>
+      {status && (
+        <button
+          style={{
+            padding: '10px 20px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            borderRadius: '10px',
+            backgroundColor: statusColor,
+            color: 'white',
+            marginBottom: '15px',
+            border: 'none',
+            boxShadow: '0 0 10px ' + statusColor,
+          }}
+        >
+          {status}
+        </button>
+      )}
+
+      <Line data={chartData} options={options} />
     </div>
-    <Line data={chartData} options={options} />
-  </div>
-);
-
+  );
 }
 
 export default PlotGraph;
