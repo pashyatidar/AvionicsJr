@@ -4,11 +4,14 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
+#include <SD.h>
+#include <SPI.h>
 
 Adafruit_MCP9600 thermocouple;
 HardwareSerial LoRaSerial(1);
 SemaphoreHandle_t sensorMutex;
 SemaphoreHandle_t loraMutex;
+SemaphoreHandle_t sdMutex;
 
 const int pressure_pin = 14;
 const int mosfet_pin = 6;
@@ -17,9 +20,10 @@ const int d4184_pwm2_pin = 13;
 const int lora_rx = 43;
 const int lora_tx = 44;
 const int load_cell_pin = 41;
+const int sd_cs_pin = 5; // SD card chip select pin (adjust as needed)
 
-const float load_cell_scale = 10000; 
-const float load_cell_offset = 0.0; 
+const float load_cell_scale = 10000;
+const float load_cell_offset = 0.0;
 
 typedef enum {
   SAFE,
@@ -36,6 +40,8 @@ unsigned long test_start_time = 0;
 unsigned long last_ignition_attempt = 0;
 int ignition_state = 0;
 
+File dataFile;
+
 float read_thermocouple() {
     if (xSemaphoreTake(sensorMutex, portMAX_DELAY)) {
         float temp = thermocouple.readThermocouple();
@@ -47,7 +53,7 @@ float read_thermocouple() {
 
 float read_load_cell() {
     if (xSemaphoreTake(sensorMutex, portMAX_DELAY)) {
-        int adc_value = analogRead(load_cell_pin); 
+        int adc_value = analogRead(load_cell_pin);
         float voltage = (adc_value * 3.3) / 4095.0;
         float load = (voltage * load_cell_scale) + load_cell_offset;
         xSemaphoreGive(sensorMutex);
@@ -63,6 +69,24 @@ float read_pressure() {
         return pressure;
     }
     return 0.0;
+}
+
+void write_to_sd(float temp, float load, float pressure, unsigned long timestamp) {
+    if (xSemaphoreTake(sdMutex, portMAX_DELAY)) {
+        dataFile = SD.open("/datalog.csv", FILE_APPEND);
+        if (dataFile) {
+            const char* state_str = (currentState == SAFE) ? "SAFE" : (currentState == ARMED) ? "ARMED" : "LAUNCHED";
+            char buffer[100];
+            snprintf(buffer, sizeof(buffer), "%lu,%s,%.2f,%.2f,%.2f,%d",
+                     timestamp, state_str, temp, load, pressure, ignition_state);
+            dataFile.println(buffer);
+            dataFile.flush();
+            dataFile.close();
+        } else {
+            Serial.println("Error opening datalog.csv");
+        }
+        xSemaphoreGive(sdMutex);
+    }
 }
 
 void ignite_primary() {
@@ -171,6 +195,7 @@ void sensor_task(void *pvParameters) {
             float load = read_load_cell();
             float pressure = read_pressure();
             send_lora_data(temp, load, pressure, current_time - test_start_time);
+            write_to_sd(temp, load, pressure, current_time - test_start_time);
             last_sample = current_time;
         }
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -213,12 +238,12 @@ void setup() {
         Serial.println("Could not initialize MCP9600! Check wiring or I2C address.");
         while (1);
     }
-    thermocouple.setADCresolution(MCP9600_ADCRESOLUTION_14); 
+    thermocouple.setADCresolution(MCP9600_ADCRESOLUTION_14);
     thermocouple.setThermocoupleType(MCP9600_TYPE_K);
     thermocouple.setFilterCoefficient(3);
 
     LoRaSerial.begin(115200, SERIAL_8N1, lora_rx, lora_tx);
-    pinMode(load_cell_pin, INPUT); 
+    pinMode(load_cell_pin, INPUT);
     pinMode(mosfet_pin, OUTPUT);
     pinMode(d4184_pwm1_pin, OUTPUT);
     pinMode(d4184_pwm2_pin, OUTPUT);
@@ -226,9 +251,27 @@ void setup() {
     digitalWrite(d4184_pwm1_pin, LOW);
     digitalWrite(d4184_pwm2_pin, LOW);
 
+    // Initialize SD card
+    if (!SD.begin(sd_cs_pin)) {
+        Serial.println("SD card initialization failed!");
+        while (1);
+    }
+    Serial.println("SD card initialized.");
+
+    // Create or open CSV file and write header
+    dataFile = SD.open("/datalog.csv", FILE_WRITE);
+    if (dataFile) {
+        dataFile.println("Timestamp,State,Temperature,Load,Pressure,IgnitionState");
+        dataFile.close();
+    } else {
+        Serial.println("Error creating datalog.csv");
+        while (1);
+    }
+
     sensorMutex = xSemaphoreCreateMutex();
     loraMutex = xSemaphoreCreateMutex();
-    if (sensorMutex == NULL || loraMutex == NULL) {
+    sdMutex = xSemaphoreCreateMutex();
+    if (sensorMutex == NULL || loraMutex == NULL || sdMutex == NULL) {
         Serial.println("Failed to create mutex!");
         while (1);
     }
