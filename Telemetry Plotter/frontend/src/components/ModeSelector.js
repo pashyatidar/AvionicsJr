@@ -6,7 +6,6 @@ function ModeSelector({ setMode }) {
     <div>
       <h2>Select Mode</h2>
       <button onClick={() => setMode('serial')}>Serial Port</button>
-      <button onClick={() => setMode('csv')}>CSV File</button>
       <button onClick={() => setMode('test')}>Test Data</button>
     </div>
   );
