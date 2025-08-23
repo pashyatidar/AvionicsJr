@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Data Plotter | uPlot</title>
+    <link rel="stylesheet" href="https://unpkg.com/uplot@1.6.26/dist/uPlot.min.css">
+    <script src="https://unpkg.com/uplot@1.6.26/dist/uPlot.iife.min.js"></script>
+    <!-- Link to external CSS file -->
+    <link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">Plotter</div>
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-page="homePage">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                    <span class="nav-text">Home</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-page="csvPage">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+                    <span class="nav-text">CSV Plotter</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-page="randomPage">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h2l2-9l4 18l4-9h2"/></svg>
+                    <span class="nav-text">Random Data</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-page="serialPage">
+                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14H9v-2h6v2zm3-4H6V6h12v8z"/></svg>
+                    <span class="nav-text">Serial Device</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <div class="main-content" id="mainContent">
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-toggle" id="menuToggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+                </button>
+                <h1 class="page-title" id="pageTitle">Home</h1>
+            </div>
+            <div class="header-controls">
+                <button id="downloadCsvButton" style="display:none;">Download CSV</button>
+                <button id="restartCsvButton" style="display:none;">Restart CSV</button>
+                <button id="restartRandomButton" style="display:none;">Restart Random</button>
+                <button id="pauseButton" style="display:none;">Pause</button>
+                <button id="resumeButton" style="display:none;" disabled>Resume</button>
+            </div>
+        </header>
+
+        <div class="content-body-wrapper">
+            <div class="pages-container">
+                <main class="page active" id="homePage">
+                     <h1>Welcome to the Interactive Data Plotter</h1>
+                     <p>Use the navigation menu on the left to select a data source. You can plot data from a CSV file, a connected serial device, or generate random data in real-time.</p>
+                </main>
+        
+                <main class="page" id="csvPage">
+                    <div id="csvModeUI">
+                        <div id="fileDropArea">
+                            <p><strong>Click to browse</strong> or drag & drop a .CSV file here</p>
+                            <small>Timestamp and at least one data column (pressure, thrust, temp) required.</small>
+                        </div>
+                        <input type="file" id="csvFile" accept=".csv" hidden>
+                        <div class="csv-controls">
+                            <select id="timestampUnit">
+                                <option value="ms">Timestamps are in Milliseconds</option>
+                                <option value="s">Timestamps are in Seconds</option>
+                            </select>
+                            <div id="defaultViewControl" style="display: none;">
+                                <label for="defaultViewSelect">Default View:</label>
+                                <select id="defaultViewSelect"></select>
+                            </div>
+                            <button id="plotButton" disabled>Plot from CSV</button>
+                        </div>
+                    </div>
+                </main>
+        
+                <main class="page" id="randomPage">
+                    <div class="realtime-controls">
+                         <button id="startRandomPlotting">Start Random Data</button>
+                    </div>
+                </main>
+        
+                <main class="page" id="serialPage">
+                     <div class="serial-config-container">
+                        <h2>Configure Serial Data</h2>
+                        <p>Define the order of data columns coming from your device after the initial timestamp.</p>
+                        <div id="serialConfig">
+                            <div class="serial-col">
+                                <label for="serialCol1">Column 1 (Required)</label>
+                                <select id="serialCol1">
+                                    <option value="none">-- Select --</option>
+                                    <option value="pressure">Pressure</option>
+                                    <option value="thrust">Thrust</option>
+                                    <option value="temperature">Temperature</option>
+                                </select>
+                            </div>
+                            <div class="serial-col">
+                                <label for="serialCol2">Column 2 (Optional)</label>
+                                <select id="serialCol2">
+                                    <option value="none">-- None --</option>
+                                    <option value="pressure">Pressure</option>
+                                    <option value="thrust">Thrust</option>
+                                    <option value="temperature">Temperature</option>
+                                </select>
+                            </div>
+                            <div class="serial-col">
+                                <label for="serialCol3">Column 3 (Optional)</label>
+                                <select id="serialCol3">
+                                    <option value="none">-- None --</option>
+                                    <option value="pressure">Pressure</option>
+                                    <option value="thrust">Thrust</option>
+                                    <option value="temperature">Temperature</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button id="connectSerial" disabled>Connect to Serial Device</button>
+                        <p id="serialStatus">Status: Disconnected</p>
+                     </div>
+                </main>
+                
+                <main class="page" id="plottingPage">
+                    <div id="mainChartArea" class="main-chart-area">
+                        <div id="uplot-main-wrapper"></div>
+                    </div>
+                </main>
+            </div>
+
+            <div class="sidebar-stats" id="statsSidebar" style="display: none;">
+                <div id="pressureThumbnail" class="thumbnail-chart-container">
+                    <div class="thumbnail-chart"></div>
+                </div>
+                <div id="thrustThumbnail" class="thumbnail-chart-container">
+                    <div class="thumbnail-chart"></div>
+                </div>
+                <div id="temperatureThumbnail" class="thumbnail-chart-container">
+                    <div class="thumbnail-chart"></div>
+                </div>
+                <div class="stats-container">
+                    <div id="fsmState" class="stat-box fsm-state">FSM State: SAFE</div>
+                    <div id="maxPressure" class="stat-box">Max Pressure: -- hPa</div>
+                    <div id="maxThrust" class="stat-box">Max Thrust: -- N</div>
+                    <div id="maxTemperature" class="stat-box">Max Temp: -- °C</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link to external JavaScript file -->
+    <script src="app.js"></script>
+</body>
+</html>
